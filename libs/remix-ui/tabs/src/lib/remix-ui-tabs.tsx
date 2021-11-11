@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useReducer } from 'react' // eslint-disable-line
-import { Tab, Tabs, TabList, TabPanel } from '../../react-tabs/src/index'
+// import { Tab, Tabs, TabList, TabPanel } from '../../react-tabs/src/index'
 import './remix-ui-tabs.css'
 
 /* eslint-disable-next-line */
@@ -25,11 +25,12 @@ export const TabsUI = (props: TabsUIProps) => {
   tabs.current = props.tabs // we do this to pass the tabs list to the onReady callbacks
 
   useEffect(() => {
-    if (props.tabs[selectedIndex]) {
+    if (tabsRef.current[selectedIndex]) {
       tabsRef.current[selectedIndex].scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [selectedIndex])
 
+  /*
   const renderTab = (tab, index) => {
     const classNameImg = 'my-1 mr-1 text-dark ' + tab.iconClass
     const classNameTab = 'nav-item nav-link d-flex justify-content-center align-items-center px-2 py-1 tab' + (index === currentIndexRef.current ? ' active' : '')
@@ -43,6 +44,7 @@ export const TabsUI = (props: TabsUIProps) => {
       </div>
     )
   }
+  */
 
   const active = () => {
     if (currentIndexRef.current < 0) return ''
@@ -67,15 +69,6 @@ export const TabsUI = (props: TabsUIProps) => {
           <span data-id="tabProxyZoomOut" className="btn btn-sm px-2 fas fa-search-minus text-dark" title="Zoom out" onClick={() => props.onZoomOut()}></span>
           <span data-id="tabProxyZoomIn" className="btn btn-sm px-2 fas fa-search-plus text-dark" title="Zoom in" onClick={() => props.onZoomIn()}></span>
         </div>
-        <Tabs
-          className="tab-scroll"
-          selectedIndex={selectedIndex}
-        >
-          <TabList className="d-flex flex-row justify-content-center align-items-center">
-            {props.tabs.map((tab, i) => <Tab className="py-1" key={tab.name}>{renderTab(tab, i)}</Tab>)}
-          </TabList>
-          {props.tabs.map((tab) => <TabPanel key={tab.name} ></TabPanel>)}
-        </Tabs>
       </div>
       <i className="mt-2 mr-2 fas fa-arrows-alt-h" title="Scroll to see all tabs"></i>
     </div>

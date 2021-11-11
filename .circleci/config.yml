@@ -439,12 +439,7 @@ workflows:
               only: master
       - deploy-remix-beta:          
           requires:
-            - remix-ide-chrome-1
-            - remix-ide-chrome-2
-            - remix-ide-firefox-1
-            - remix-ide-firefox-2
-            - remix-ide-run-deploy
-            - remix-ide-plugin-api
+            - lint
           filters:
             branches:
               only: remix_beta
