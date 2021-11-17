@@ -271,6 +271,12 @@ export const EditorUI = (props: EditorUIProps) => {
       onMount={handleEditorDidMount}
       beforeMount={handleEditorWillMount}
       options= { { glyphMargin: true } }
+      /*
+      установка нужной строки в тело редактора [НЕКОРРЕКТНЫЙ СПОСОБ], 
+      нужно понять, как корректным образом устанавливать внутрь него значение, 
+      похоже, что желаемый метод находится где-то внутри editorRef/monacoRef
+      */
+      // value='pragma solidity >=0.7.0 <0.9.0;'
     />
   )
 }

@@ -36,6 +36,19 @@ export const FileExplorer = (props: FileExplorerProps) => {
   })
   const [canPaste, setCanPaste] = useState(false)
 
+  /* 
+  автоматическое создание файла/файлов на маунт файлового дерева => создание файла с кодом для урока,
+  следующий шаг - фокус на созданном файле (для этого в недрах ремикса есть API) 
+  и понять как программным способом передавать внутрь созданного файла нужную нам строку 
+  */
+  useEffect(() => {
+    (async () => {
+      await props.dispatchCreateNewFile('default_workspace/example-contract.sol', props.name)
+      await props.dispatchCreateNewFile('default_workspace/example-contract-new.sol', props.name)
+    })()
+  }, [])
+  /* */
+
   useEffect(() => {
     if (contextMenuItems) {
       addMenuItems(contextMenuItems)
