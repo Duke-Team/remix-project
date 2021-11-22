@@ -138,6 +138,7 @@ export const loadWorkspacePreset = async (template: 'gist-template' | 'code-temp
       // insert example contracts
       console.log(examples, 'examples')
       for (const file in examples) {
+        console.log(workspaceProvider, 'workspaceProvider')
         try {
           await workspaceProvider.set(examples[file].name, examples[file].content)
         } catch (error) {
