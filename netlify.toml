@@ -1,10 +1,10 @@
 [context.branch-deploy]
-  command = "yarn run build:stage"
+  command = "nx build && nx serve"
   functions = ""
   publish = "build"
 
 [build]
-  command = "yarn run build"
+  command = "nx build && nx serve"
   functions = ""
   publish = "build"
 
