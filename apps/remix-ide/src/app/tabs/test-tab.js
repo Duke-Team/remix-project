@@ -274,6 +274,7 @@ module.exports = class TestTab extends ViewPlugin {
   testCallback (result, runningTests) {
     this.testsOutput.hidden = false
     let debugBtn = yo``
+    console.log(result, runningTests, 'testCallback')
     if ((result.type === 'testPass' || result.type === 'testFailure') && result.debugTxHash) {
       const { web3, debugTxHash } = result
       debugBtn = yo`<div id=${result.value.replaceAll(' ', '_')} class="btn border btn btn-sm ml-1" title="Start debugging" onclick=${() => this.startDebug(debugTxHash, web3)}>

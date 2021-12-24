@@ -18,6 +18,8 @@ export function Workspace () {
   }, [])
 
   useEffect(() => {
+    console.log(global, 'global')
+    console.log(global.fs.browser.currentWorkspace, 'global.fs.browser.currentWorkspace')
     if (global.fs.mode === 'browser') {
       if (global.fs.browser.currentWorkspace) setCurrentWorkspace(global.fs.browser.currentWorkspace)
       else setCurrentWorkspace(NO_WORKSPACE)

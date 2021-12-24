@@ -65,6 +65,7 @@ class Editor extends Plugin {
   render () {
     if (this.el) return this.el
 
+    console.log(this.currentFile, 'this.currentFile')
     this.el = document.createElement('div')
     this.el.setAttribute('id', 'editorView')
     this.el.currentContent = () => this.currentContent() // used by e2e test

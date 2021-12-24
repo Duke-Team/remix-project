@@ -37,6 +37,7 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
       const filePath = await loadWorkspacePreset('code-template')
       plugin.on('editor', 'editorMounted', () => plugin.fileManager.openFile(filePath))
     } else {
+      console.log(workspaces, 'workspaces')
       if (workspaces.length === 0) {
         await createWorkspaceTemplate('default_workspace', 'default-template')
         plugin.setWorkspace({ name: 'default_workspace', isLocalhost: false })
@@ -44,9 +45,11 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
         await loadWorkspacePreset('default-template')
       } else {
         if (workspaces.length > 0) {
-          workspaceProvider.setWorkspace(workspaces[workspaces.length - 1])
-          plugin.setWorkspace({ name: workspaces[workspaces.length - 1], isLocalhost: false })
-          dispatch(setCurrentWorkspace(workspaces[workspaces.length - 1]))
+          const defaultWorspace = 'default_workspace'
+          workspaceProvider.setWorkspace(defaultWorspace)
+          plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+          dispatch(setCurrentWorkspace(defaultWorspace))
+          workspaceProvider.set('file1.sol', '// content')
         }
       }
     }

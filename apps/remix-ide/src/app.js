@@ -166,6 +166,7 @@ class App {
   }
 
   render () {
+    console.log(window.location.href, 'window.location.href')
     var self = this
     if (self._view.el) return self._view.el
     // not resizable
