@@ -1,5 +1,5 @@
 [context.branch-deploy]
-  command = "npm run build:production"
+  command = "npm install && npm run build:production"
   functions = ""
   publish = "dist/remix-ide"
   environment = { NODE_VERSION = "14.17.6" }
@@ -8,7 +8,7 @@
   environment = { NODE_VERSION = "14.17.6" }
 
 [build]
-  command = "npm run build:production"
+  command = "npm install && npm run build:production"
   functions = ""
   publish = "dist/remix-ide"
   environment = { NODE_VERSION = "14.17.6" }
