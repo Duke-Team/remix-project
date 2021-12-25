@@ -1,12 +1,17 @@
 [context.branch-deploy]
-  command = "nx build && nx serve"
+  command = "npm install && npm run build:production"
   functions = ""
-  publish = "build"
+  publish = "dist/remix-ide"
+  environment = { NODE_VERSION = "^14.17.6" }
+
+[context.production]
+  environment = { NODE_VERSION = "^14.17.6" }
 
 [build]
-  command = "nx build && nx serve"
+  command = "npm install && npm run build:production"
   functions = ""
-  publish = "build"
+  publish = "dist/remix-ide"
+  environment = { NODE_VERSION = "^14.17.6" }
 
   ## Uncomment to use this redirect for Single Page Applications like create-react-app.
   ## Not needed for static site generators.
