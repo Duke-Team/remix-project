@@ -1,7 +1,7 @@
 [context.branch-deploy]
   command = "npm run build:production"
   functions = ""
-  publish = "dist/remix-ide"
+  publish = "dist/apps/remix-ide"
   environment = { NODE_VERSION = "14.17.6" }
 
 [context.production]
@@ -10,7 +10,7 @@
 [build]
   command = "npm run build:production"
   functions = ""
-  publish = "dist/remix-ide"
+  publish = "dist/apps/remix-ide"
   environment = { NODE_VERSION = "14.17.6" }
 
   ## Uncomment to use this redirect for Single Page Applications like create-react-app.
