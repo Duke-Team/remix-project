@@ -215,6 +215,7 @@ class App {
     } else if (window.location.protocol.indexOf('http') === 0 &&
     window.location.hostname !== 'remix.ethereum.org' &&
     window.location.hostname !== 'localhost' &&
+    window.location.hostname !== 'duke-remix-master.netlify.app' &&
     window.location.hostname !== '127.0.0.1') {
       modalDialogCustom.alert(`The Remix IDE has moved to http://remix.ethereum.org.\n
   This instance of Remix you are visiting WILL NOT BE UPDATED.\n
