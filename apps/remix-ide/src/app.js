@@ -21,6 +21,7 @@ import { MainPanel } from './app/components/main-panel'
 import { OffsetToLineColumnConverter, CompilerMetadata, CompilerArtefacts, FetchAndCompile, CompilerImports } from '@remix-project/core-plugin'
 
 import migrateFileSystem from './migrateFileSystem'
+import { TasksApi } from './app/api/tasks'
 
 const isElectron = require('is-electron')
 const csjs = require('csjs-inject')
@@ -166,7 +167,6 @@ class App {
   }
 
   render () {
-    console.log(window.location.href, 'window.location.href')
     var self = this
     if (self._view.el) return self._view.el
     // not resizable
@@ -205,6 +205,16 @@ class App {
 
   async run () {
     var self = this
+    const queryParams = new QueryParams()
+    const params = queryParams.get()
+    let taskContent
+    try {
+      console.log(window.location, 'location')
+      console.log(params)
+      taskContent = await TasksApi.getTask(params?.taskId)
+    } catch (error) {
+      console.error(error)
+    }
 
     // check the origin and warn message
     if (window.location.hostname === 'yann300.github.io') {
@@ -334,7 +344,7 @@ class App {
     const sidePanel = new SidePanel(appManager, menuicons)
     const hiddenPanel = new HiddenPanel()
     const pluginManagerComponent = new PluginManagerComponent(appManager, engine)
-    const filePanel = new FilePanel(appManager)
+    const filePanel = new FilePanel(appManager, taskContent)
     const landingPage = new LandingPage(appManager, menuicons, fileManager, filePanel, contentImport)
     const settings = new SettingsTab(
       registry.get('config').api,
@@ -357,9 +367,6 @@ class App {
       pluginManagerComponent,
       settings
     ])
-
-    const queryParams = new QueryParams()
-    const params = queryParams.get()
 
     const onAcceptMatomo = () => {
       _paq.push(['forgetUserOptOut'])
@@ -512,6 +519,7 @@ class App {
         appManager.activatePlugin(['solidity', 'udapp'])
       }
     })
+    appManager.activatePlugin(['solidityUnitTesting'])
 
     // Load and start the service who manager layout and frame
     const framingService = new FramingService(sidePanel, menuicons, mainview, this._components.resizeFeature)

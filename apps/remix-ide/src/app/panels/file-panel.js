@@ -39,7 +39,7 @@ const profile = {
   version: packageJson.version
 }
 module.exports = class Filepanel extends ViewPlugin {
-  constructor (appManager) {
+  constructor (appManager, taskContent) {
     super(profile)
     console.log(globalRegistry, 'globalRegistry')
     this.registry = globalRegistry
@@ -56,6 +56,7 @@ module.exports = class Filepanel extends ViewPlugin {
     this.workspaces = []
     this.appManager = appManager
     this.currentWorkspaceMetadata = {}
+    this.taskContent = taskContent
   }
 
   onActivation () {
