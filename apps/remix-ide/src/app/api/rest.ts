@@ -1,7 +1,7 @@
 // base api realization
 import logger from '../helpers/logger'
 const isDevelopment = false
-const cloudFunctionsApiUrl = '//localhost:5001/dukeweb-fef75/us-central1'
+const cloudFunctionsApiUrl = isDevelopment ? '//localhost:5001/dukeweb-fef75/us-central1' : '//us-central1-dukeweb-fef75.cloudfunctions.net'
 const TIMEOUT = 20000 // 20 sec timeout
 const baseUrl = cloudFunctionsApiUrl
 
