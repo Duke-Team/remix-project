@@ -5,6 +5,7 @@ import { customAction } from '@remixproject/plugin-api/lib/file-system/file-pane
 import { displayNotification, displayPopUp, fetchDirectoryError, fetchDirectoryRequest, fetchDirectorySuccess, focusElement, fsInitializationCompleted, hidePopUp, removeInputFieldSuccess, setCurrentWorkspace, setExpandPath, setMode, setWorkspaces } from './payload'
 import { listenOnPluginEvents, listenOnProviderEvents } from './events'
 import { createWorkspaceTemplate, getWorkspaces, loadWorkspacePreset, setPlugin } from './workspace'
+import { Structure } from '../types'
 
 export * from './events'
 export * from './workspace'
@@ -21,6 +22,7 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
     setPlugin(plugin, dispatch)
     const workspaceProvider = filePanelPlugin.fileProviders.workspace
     const localhostProvider = filePanelPlugin.fileProviders.localhost
+    const taskContent = filePanelPlugin.taskContent
     const params = queryParams.get()
     const workspaces = await getWorkspaces() || []
 
@@ -38,18 +40,40 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
       plugin.on('editor', 'editorMounted', () => plugin.fileManager.openFile(filePath))
     } else {
       console.log(workspaces, 'workspaces')
-      if (workspaces.length === 0) {
-        await createWorkspaceTemplate('default_workspace', 'default-template')
-        plugin.setWorkspace({ name: 'default_workspace', isLocalhost: false })
-        dispatch(setCurrentWorkspace('default_workspace'))
-        await loadWorkspacePreset('default-template')
-      } else {
-        if (workspaces.length > 0) {
-          const defaultWorspace = 'default_workspace'
+      console.log(taskContent, 'taskContent')
+      if (taskContent?.id) {
+        const defaultWorspace = `default_workspace_id_${taskContent.id}`
+        const hasWorkspace = workspaces.findIndex(worspaceName => worspaceName === defaultWorspace)
+        if (hasWorkspace === -1) {
+          await createWorkspaceTemplate(defaultWorspace, 'default-template')
+          plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+          dispatch(setCurrentWorkspace(defaultWorspace))
+
+          for (const file of taskContent?.structure) {
+            try {
+              await workspaceProvider.set(file.name as string, file.content as string)
+            } catch (error) {
+              console.error(error)
+            }
+          }
+        } else {
           workspaceProvider.setWorkspace(defaultWorspace)
           plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
           dispatch(setCurrentWorkspace(defaultWorspace))
-          workspaceProvider.set('file1.sol', '// content')
+        }
+      } else {
+        if (workspaces.length === 0) {
+          await createWorkspaceTemplate('default_workspace', 'default-template')
+          plugin.setWorkspace({ name: 'default_workspace', isLocalhost: false })
+          dispatch(setCurrentWorkspace('default_workspace'))
+          await loadWorkspacePreset('default-template')
+        } else {
+          if (workspaces.length > 0) {
+            const defaultWorspace = 'default_workspace'
+            workspaceProvider.setWorkspace(defaultWorspace)
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+          }
         }
       }
     }

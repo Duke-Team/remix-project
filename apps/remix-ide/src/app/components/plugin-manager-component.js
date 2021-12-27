@@ -87,6 +87,7 @@ class PluginManagerComponent extends ViewPlugin {
   }
 
   renderComponent () {
+    console.log(this.pluginManagerSettings)
     ReactDOM.render(
       <RemixUiPluginManager
         pluginComponent={this}
@@ -119,7 +120,7 @@ class PluginManagerComponent extends ViewPlugin {
       .filter(isNotDependent)
       .filter(isNotHome)
       .sort(sortByName)
-
+    console.log(this.appManager.actives, 'this.appManager.actives')
     tempArray.forEach(profile => {
       if (this.appManager.actives.includes(profile.name)) {
         activatedPlugins.push(profile)

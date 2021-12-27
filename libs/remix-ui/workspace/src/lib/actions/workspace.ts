@@ -136,9 +136,7 @@ export const loadWorkspacePreset = async (template: 'gist-template' | 'code-temp
     case 'default-template':
       // creates a new workspace and populates it with default project template.
       // insert example contracts
-      console.log(examples, 'examples')
       for (const file in examples) {
-        console.log(workspaceProvider, 'workspaceProvider')
         try {
           await workspaceProvider.set(examples[file].name, examples[file].content)
         } catch (error) {

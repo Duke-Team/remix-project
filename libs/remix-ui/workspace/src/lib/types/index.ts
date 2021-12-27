@@ -3,6 +3,28 @@ import { customAction } from '@remixproject/plugin-api/lib/file-system/file-pane
 
 export type action = { name: string, type?: Array<'folder' | 'gist' | 'file'>, path?: string[], extension?: string[], pattern?: string[], id: string, multiselect: boolean, label: string, sticky?: boolean }
 
+export type Structure = {
+  name: string
+  content: string
+}
+
+export enum TaskDifficulty {
+  EASY = 'EASY',
+  MEDIUM = 'MEDIUM',
+  HARD = 'HARD',
+  LEGENDARY = 'LEGENDARY',
+}
+
+export type TaskType = {
+  id: string
+  title: string
+  description: string
+  difficulty: TaskDifficulty
+  structure?: Structure[]
+  createdAt?: number
+  updatedAt?: number
+}
+
 export type MenuItems = action[]
 export interface WorkspaceProps {
   plugin: {
@@ -30,6 +52,7 @@ export interface WorkspaceProps {
     initialWorkspace: string,
     resetNewFile: () => void,
     getWorkspaces: () => string[]
+    taskContent: TaskType
   }
 }
 export interface WorkspaceState {
