@@ -22,6 +22,7 @@ import { OffsetToLineColumnConverter, CompilerMetadata, CompilerArtefacts, Fetch
 
 import migrateFileSystem from './migrateFileSystem'
 import { TasksApi } from './app/api/tasks'
+import { UserTasksProgressApi } from './app/api/user-task-progress'
 
 const isElectron = require('is-electron')
 const csjs = require('csjs-inject')
@@ -128,6 +129,10 @@ const css = csjs`
 class App {
   constructor (api = {}, events = {}, opts = {}) {
     var self = this
+    self.userId = undefined
+    self.taskId = undefined
+    self.testResults = undefined
+    self.taskContent = undefined
     self.appManager = new RemixAppManager({})
     self._components = {}
     self._view = {}
@@ -203,17 +208,92 @@ class App {
     return self._view.el
   }
 
+  async sendTestResult (testResult) {
+    const userId = this.userId
+    const taskId = this.userId
+
+    if (!userId || !taskId) {
+      return false
+    }
+    const hasFailureRootTest = testResult?.findIndex(test => test.totalFailing)
+
+    const payload = {
+      testResult,
+      taskId: this.taskId,
+      userId: this.userId,
+      task: this.taskContent,
+      isValidFinished: hasFailureRootTest === -1
+    }
+
+    try {
+      await UserTasksProgressApi.updateUserTaskProgress(payload)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  resetTestResult () {
+    this.testResults = undefined
+  }
+
+  updateTestResult (result, rootTestsNumber) {
+    let parsedResult = result
+
+    if (result.web3) {
+      delete result.web3
+
+      parsedResult = result
+    }
+
+    this.testResults = [...(this.testResults ?? []), parsedResult].reduce((tests, test) => {
+      if (!test.type) {
+        const testItems = tests.filter(item => item.type)
+        const testParents = tests.filter(item => !item.type)
+        return [
+          ...testParents,
+          {
+            tests: testItems,
+            ...test
+          }
+        ]
+      }
+
+      return [...tests, test]
+    }, [])
+
+    const passedRootTestsLength = this.testResults.filter(item => !item.type).length
+
+    if (rootTestsNumber === passedRootTestsLength) {
+      this.sendTestResult(this.testResults)
+    }
+  }
+
   async run () {
     var self = this
     const queryParams = new QueryParams()
     const params = queryParams.get()
-    let taskContent
+
     try {
-      console.log(window.location, 'location')
-      console.log(params)
-      taskContent = await TasksApi.getTask(params?.taskId)
+      self.taskContent = await TasksApi.getTask(params?.taskId)
     } catch (error) {
       console.error(error)
+    }
+
+    if (params?.userId) {
+      self.userId = params?.userId
+    }
+
+    if (params?.userId) {
+      self.taskId = params?.taskId
+    }
+
+    const updateTestsMethods = {
+      updateTestResult: self.updateTestResult,
+      resetTestResult: self.resetTestResult,
+      sendTestResult: self.sendTestResult,
+      taskContent: self.taskContent,
+      taskId: self.taskId,
+      userId: self.userId
     }
 
     // check the origin and warn message
@@ -344,7 +424,7 @@ class App {
     const sidePanel = new SidePanel(appManager, menuicons)
     const hiddenPanel = new HiddenPanel()
     const pluginManagerComponent = new PluginManagerComponent(appManager, engine)
-    const filePanel = new FilePanel(appManager, taskContent)
+    const filePanel = new FilePanel(appManager, self.taskContent)
     const landingPage = new LandingPage(appManager, menuicons, fileManager, filePanel, contentImport)
     const settings = new SettingsTab(
       registry.get('config').api,
@@ -448,7 +528,8 @@ class App {
       filePanel,
       compileTab,
       appManager,
-      contentImport
+      contentImport,
+      updateTestsMethods
     )
 
     engine.register([
