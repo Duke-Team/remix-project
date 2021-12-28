@@ -227,6 +227,11 @@ class App {
 
     try {
       await UserTasksProgressApi.updateUserTaskProgress(payload)
+
+      window.parent && window.parent.postMessage({
+        type: 'user-task-progress',
+        payload
+      }, '*')
     } catch (error) {
       console.error(error)
     }
