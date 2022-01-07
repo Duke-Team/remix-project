@@ -61,7 +61,7 @@ module.exports = class Filepanel extends ViewPlugin {
     setInterval(async () => {
       const files = await this.fileProviders.workspace.copyFolderToJson('/')
       filePanelContext.updateFileStructures(files)
-    }, 3000)
+    }, 5000)
   }
 
   onActivation () {
