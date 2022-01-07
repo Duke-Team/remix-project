@@ -5,7 +5,6 @@ import { customAction } from '@remixproject/plugin-api/lib/file-system/file-pane
 import { displayNotification, displayPopUp, fetchDirectoryError, fetchDirectoryRequest, fetchDirectorySuccess, focusElement, fsInitializationCompleted, hidePopUp, removeInputFieldSuccess, setCurrentWorkspace, setExpandPath, setMode, setWorkspaces } from './payload'
 import { listenOnPluginEvents, listenOnProviderEvents } from './events'
 import { createWorkspaceTemplate, getWorkspaces, loadWorkspacePreset, setPlugin } from './workspace'
-import { Structure } from '../types'
 
 export * from './events'
 export * from './workspace'
@@ -39,17 +38,24 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
       const filePath = await loadWorkspacePreset('code-template')
       plugin.on('editor', 'editorMounted', () => plugin.fileManager.openFile(filePath))
     } else {
-      console.log(workspaces, 'workspaces')
-      console.log(taskContent, 'taskContent')
+
+      // TODO: This place need to refactor and remove duplicates
       if (taskContent?.id) {
         const defaultWorspace = `default_workspace_id_${taskContent.id}`
         const hasWorkspace = workspaces.findIndex(worspaceName => worspaceName === defaultWorspace)
-        if (hasWorkspace === -1) {
-          await createWorkspaceTemplate(defaultWorspace, 'default-template')
-          plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
-          dispatch(setCurrentWorkspace(defaultWorspace))
 
-          for (const file of taskContent?.structure) {
+        if (taskContent?.userStructure) {
+          if (hasWorkspace === -1) {
+            await createWorkspaceTemplate(defaultWorspace, 'default-template')
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+          } else {
+            workspaceProvider.setWorkspace(defaultWorspace)
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+          }
+
+          for (const file of taskContent?.userStructure) {
             try {
               await workspaceProvider.set(file.name as string, file.content as string)
             } catch (error) {
@@ -57,9 +63,23 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
             }
           }
         } else {
-          workspaceProvider.setWorkspace(defaultWorspace)
-          plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
-          dispatch(setCurrentWorkspace(defaultWorspace))
+          if (hasWorkspace === -1) {
+            await createWorkspaceTemplate(defaultWorspace, 'default-template')
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+
+            for (const file of taskContent?.structure) {
+              try {
+                await workspaceProvider.set(file.name as string, file.content as string)
+              } catch (error) {
+                console.error(error)
+              }
+            }
+          } else {
+            workspaceProvider.setWorkspace(defaultWorspace)
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+          }
         }
       } else {
         if (workspaces.length === 0) {

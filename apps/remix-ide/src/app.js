@@ -208,6 +208,59 @@ class App {
     return self._view.el
   }
 
+  parseStructures (structure, files = []) {
+    for (const key in structure) {
+      const file = structure[key]
+
+      if (file?.children) {
+        const parsedFiles = this.parseStructures(file, files)
+        files.concat(parsedFiles)
+      }
+
+      if (file?.content) {
+        files.push({
+          name: key,
+          content: file?.content
+        })
+      }
+
+      if (!file?.children && !file?.content) {
+        const parsedFiles = this.parseStructures(file, files)
+        files.concat(parsedFiles)
+      }
+    }
+
+    return files
+  }
+
+  async updateFileStructures (structure) {
+    const userId = this.userId
+    const taskId = this.userId
+    const currentUserStructure = this.parseStructures(structure)
+    const userBeforeCheckStructure = this.taskContent?.userStructure
+
+    this.taskContent.userStructure = currentUserStructure
+    if (!userId || !taskId) {
+      return false
+    }
+
+    if (JSON.stringify(userBeforeCheckStructure) === JSON.stringify(currentUserStructure)) {
+      return
+    }
+
+    const payload = {
+      taskId: this.taskId,
+      userId: this.userId,
+      userStructure: currentUserStructure
+    }
+
+    try {
+      await UserTasksProgressApi.updateUserTaskStructure(payload)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   async sendTestResult (testResult) {
     const userId = this.userId
     const taskId = this.userId
@@ -215,6 +268,7 @@ class App {
     if (!userId || !taskId) {
       return false
     }
+
     const hasFailureRootTest = testResult?.findIndex(test => test.totalFailing)
 
     const payload = {
@@ -279,7 +333,13 @@ class App {
     const params = queryParams.get()
 
     try {
-      self.taskContent = await TasksApi.getTask(params?.taskId)
+      const response = await TasksApi.getTask(params?.taskId, params?.userId)
+
+      if (response?.task) {
+        self.taskContent = { ...response.task, userStructure: response?.userStructure }
+      } else {
+        self.taskContent = response
+      }
     } catch (error) {
       console.error(error)
     }
@@ -296,6 +356,14 @@ class App {
       updateTestResult: self.updateTestResult,
       resetTestResult: self.resetTestResult,
       sendTestResult: self.sendTestResult,
+      taskContent: self.taskContent,
+      taskId: self.taskId,
+      userId: self.userId
+    }
+
+    const filePanelContext = {
+      updateFileStructures: self.updateFileStructures,
+      parseStructures: self.parseStructures,
       taskContent: self.taskContent,
       taskId: self.taskId,
       userId: self.userId
@@ -429,7 +497,7 @@ class App {
     const sidePanel = new SidePanel(appManager, menuicons)
     const hiddenPanel = new HiddenPanel()
     const pluginManagerComponent = new PluginManagerComponent(appManager, engine)
-    const filePanel = new FilePanel(appManager, self.taskContent)
+    const filePanel = new FilePanel(appManager, filePanelContext)
     const landingPage = new LandingPage(appManager, menuicons, fileManager, filePanel, contentImport)
     const settings = new SettingsTab(
       registry.get('config').api,

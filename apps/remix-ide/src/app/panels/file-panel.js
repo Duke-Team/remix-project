@@ -39,16 +39,14 @@ const profile = {
   version: packageJson.version
 }
 module.exports = class Filepanel extends ViewPlugin {
-  constructor (appManager, taskContent) {
+  constructor (appManager, filePanelContext) {
     super(profile)
-    console.log(globalRegistry, 'globalRegistry')
     this.registry = globalRegistry
     this.fileProviders = this.registry.get('fileproviders').api
     this.fileManager = this.registry.get('filemanager').api
 
     this.el = document.createElement('div')
     this.el.setAttribute('id', 'fileExplorerView')
-
     this.remixdHandle = new RemixdHandle(this.fileProviders.localhost, appManager)
     this.gitHandle = new GitHandle()
     this.hardhatHandle = new HardhatHandle()
@@ -56,7 +54,14 @@ module.exports = class Filepanel extends ViewPlugin {
     this.workspaces = []
     this.appManager = appManager
     this.currentWorkspaceMetadata = {}
-    this.taskContent = taskContent
+    this.taskContent = filePanelContext?.taskContent
+
+    // This place for check user files and update it in our firestore
+
+    setInterval(async () => {
+      const files = await this.fileProviders.workspace.copyFolderToJson('/')
+      filePanelContext.updateFileStructures(files)
+    }, 3000)
   }
 
   onActivation () {
@@ -133,7 +138,6 @@ module.exports = class Filepanel extends ViewPlugin {
 
   createWorkspace (workspaceName, isEmpty) {
     return new Promise((resolve, reject) => {
-      console.log(workspaceName, isEmpty, 'workspaceName, isEmpty')
       this.emit('createWorkspaceReducerEvent', workspaceName, isEmpty, (err, data) => {
         if (err) reject(err)
         else resolve(data || true)
