@@ -288,6 +288,10 @@ class App {
       }, '*')
     } catch (error) {
       console.error(error)
+    } finally {
+      window.parent && window.parent.postMessage({
+        type: 'finish-task-progress'
+      }, '*')
     }
   }
 
@@ -296,6 +300,10 @@ class App {
   }
 
   updateTestResult (result, rootTestsNumber) {
+    window.parent && window.parent.postMessage({
+      type: 'start-task-progress'
+    }, '*')
+
     let parsedResult = result
 
     if (result.web3) {
@@ -680,6 +688,10 @@ class App {
 
     if (params.embed) framingService.embed()
     framingService.start(params)
+
+    window.parent && window.parent.postMessage({
+      type: 'ide-inited'
+    }, '*')
   }
 }
 

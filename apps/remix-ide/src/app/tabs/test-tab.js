@@ -53,6 +53,12 @@ module.exports = class TestTab extends ViewPlugin {
     appManager.event.on('deactivate', (name) => {
       if (name === 'solidity') this.updateRunAction()
     })
+
+    window.addEventListener('message', event => {
+      if (event?.data?.type === 'run-remix-tests') {
+        this.runTests()
+      }
+    }, false)
   }
 
   onActivationInternal () {
@@ -607,6 +613,9 @@ module.exports = class TestTab extends ViewPlugin {
   }
 
   runTests () {
+    window.parent && window.parent.postMessage({
+      type: 'start-task-progress'
+    }, '*')
     this.areTestsRunning = true
     this.hasBeenStopped = false
     this.readyTestsNumber = 0
