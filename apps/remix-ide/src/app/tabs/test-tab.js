@@ -428,10 +428,26 @@ module.exports = class TestTab extends ViewPlugin {
       this.setHeader(false)
     }
     if (_errors && _errors.errors) {
+      console.log(_errors && _errors.errors, '_errors && _errors.errors')
+      window.parent && window.parent.postMessage({
+        type: 'show-compile-error',
+        payload: _errors.errors
+      }, '*')
+
       _errors.errors.forEach((err) => this.renderer.error(err.formattedMessage || err.message, this.testsOutput, { type: err.severity, errorType: err.type }))
     } else if (_errors && Array.isArray(_errors) && (_errors[0].message || _errors[0].formattedMessage)) {
+      window.parent && window.parent.postMessage({
+        type: 'show-compile-error',
+        payload: _errors
+      }, '*')
+
       _errors.forEach((err) => this.renderer.error(err.formattedMessage || err.message, this.testsOutput, { type: err.severity, errorType: err.type }))
     } else if (_errors && !_errors.errors && !Array.isArray(_errors)) {
+      window.parent && window.parent.postMessage({
+        type: 'show-compile-error',
+        payload: [_errors]
+      }, '*')
+
       // To track error like this: https://github.com/ethereum/remix/pull/1438
       this.renderer.error(_errors.formattedMessage || _errors.message, this.testsOutput, { type: 'error' })
     }
@@ -503,6 +519,10 @@ module.exports = class TestTab extends ViewPlugin {
         runBtn.removeAttribute('disabled')
       }
       this.areTestsRunning = false
+
+      window.parent && window.parent.postMessage({
+        type: 'finish-task-progress'
+      }, '*')
     }
   }
 
@@ -638,6 +658,10 @@ module.exports = class TestTab extends ViewPlugin {
   }
 
   stopTests () {
+    window.parent && window.parent.postMessage({
+      type: 'finish-task-progress'
+    }, '*')
+
     this.hasBeenStopped = true
     const stopBtnLabel = document.getElementById('runTestsTabStopActionLabel')
     stopBtnLabel.innerText = 'Stopping'
