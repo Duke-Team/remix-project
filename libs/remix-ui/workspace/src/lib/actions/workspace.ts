@@ -72,7 +72,7 @@ export const createWorkspaceTemplate = async (workspaceName: string, template: '
 
 export const loadWorkspacePreset = async (template: 'gist-template' | 'code-template' | 'default-template' = 'default-template') => {
   const workspaceProvider = plugin.fileProviders.workspace
-  console.log(workspaceProvider, 'workspaceProvider')
+
   const params = queryParams.get()
 
   switch (template) {

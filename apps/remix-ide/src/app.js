@@ -21,8 +21,6 @@ import { MainPanel } from './app/components/main-panel'
 import { OffsetToLineColumnConverter, CompilerMetadata, CompilerArtefacts, FetchAndCompile, CompilerImports } from '@remix-project/core-plugin'
 
 import migrateFileSystem from './migrateFileSystem'
-import { TasksApi } from './app/api/tasks'
-import { UserTasksProgressApi } from './app/api/user-task-progress'
 
 const isElectron = require('is-electron')
 const csjs = require('csjs-inject')
@@ -168,7 +166,15 @@ class App {
   }
 
   init () {
-    this.run().catch(console.error)
+    window.addEventListener('message', event => {
+      if (event?.data?.type === 'set-task-content') {
+        event?.data?.payload && this.run(event?.data?.payload).catch(console.error)
+      }
+    }, false)
+
+    window.parent && window.parent.postMessage({
+      type: 'ide-init-before'
+    }, '*')
   }
 
   render () {
@@ -255,7 +261,10 @@ class App {
     }
 
     try {
-      await UserTasksProgressApi.updateUserTaskStructure(payload)
+      window.parent && window.parent.postMessage({
+        type: 'user-task-structure',
+        payload
+      }, '*')
     } catch (error) {
       console.error(error)
     }
@@ -280,18 +289,12 @@ class App {
     }
 
     try {
-      await UserTasksProgressApi.updateUserTaskProgress(payload)
-
       window.parent && window.parent.postMessage({
         type: 'user-task-progress',
         payload
       }, '*')
     } catch (error) {
       console.error(error)
-    } finally {
-      window.parent && window.parent.postMessage({
-        type: 'finish-task-progress'
-      }, '*')
     }
   }
 
@@ -335,18 +338,16 @@ class App {
     }
   }
 
-  async run () {
+  async run (taskContent) {
     var self = this
     const queryParams = new QueryParams()
     const params = queryParams.get()
 
     try {
-      const response = await TasksApi.getTask(params?.taskId, params?.userId)
-
-      if (response?.task) {
-        self.taskContent = { ...response.task, userStructure: response?.userStructure }
+      if (taskContent?.task) {
+        self.taskContent = { ...taskContent.task, userStructure: taskContent?.userStructure }
       } else {
-        self.taskContent = response
+        self.taskContent = taskContent
       }
     } catch (error) {
       console.error(error)
