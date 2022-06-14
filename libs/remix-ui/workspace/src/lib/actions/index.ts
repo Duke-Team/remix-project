@@ -44,8 +44,8 @@ export const initWorkspace = (filePanelPlugin, prop: any) => async (reducerDispa
       plugin.on('editor', 'editorMounted', () => plugin.fileManager.openFile(filePath))
     } else {
       // TODO: This place need to refactor and remove duplicates
-      if (taskContent?.id) {
-        const defaultWorspace = `default_workspace_id_${taskContent.id}`
+      if (taskContent?.id || taskContent?.messageId) {
+        const defaultWorspace = `default_workspace_id_${taskContent.messageId || taskContent.id}`
         const hasWorkspace = workspaces.findIndex(worspaceName => worspaceName === defaultWorspace)
 
         if (taskContent?.userStructure && !prop) {
