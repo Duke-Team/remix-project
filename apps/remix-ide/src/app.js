@@ -339,6 +339,7 @@ class App {
   }
 
   async run (taskContent) {
+    console.log('taskCOntent', taskContent)
     var self = this
     const queryParams = new QueryParams()
     const params = queryParams.get()
