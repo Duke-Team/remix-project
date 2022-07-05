@@ -44,7 +44,7 @@ const css = csjs`
     text-align: center;
   }
   .logoImg {
-    height: 10em;
+    height: 2em;
   }
   .hpSections {
   }
