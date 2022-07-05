@@ -1,16 +1,10 @@
 import * as packageJson from '../../../../../../package.json'
 import { ViewPlugin } from '@remixproject/engine-web'
-import { migrateToWorkspace } from '../../../migrateFileSystem'
-import JSZip from 'jszip'
 
 const yo = require('yo-yo')
 const csjs = require('csjs-inject')
 const globalRegistry = require('../../../global/registry')
-const modalDialogCustom = require('../modal-dialog-custom')
-const modalDialog = require('../modaldialog')
-const tooltip = require('../tooltip')
 const GistHandler = require('../../../lib/gist-handler')
-const QueryParams = require('../../../lib/query-params.js')
 const _paq = window._paq = window._paq || []
 
 const css = csjs`
@@ -239,39 +233,6 @@ export class LandingPage extends ViewPlugin {
   }
 
   render () {
-    const load = (service, item, examples, info) => {
-      const contentImport = this.contentImport
-      const fileProviders = globalRegistry.get('fileproviders').api
-      const msg = yo`
-        <div class="p-2">
-          <span>Enter the ${item} you would like to load.</span>
-          <div>${info}</div>
-          <div>e.g ${examples.map((url) => { return yo`<div class="p-1"><a>${url}</a></div>` })}</div>
-        </div>`
-
-      const title = `Import from ${service}`
-      modalDialogCustom.prompt(title, msg, null, (target) => {
-        if (target !== '') {
-          contentImport.import(
-            target,
-            (loadingMsg) => { tooltip(loadingMsg) },
-            (error, content, cleanUrl, type, url) => {
-              if (error) {
-                modalDialogCustom.alert(title, error.message || error)
-              } else {
-                try {
-                  fileProviders.workspace.addExternal(type + '/' + cleanUrl, content, url)
-                  this.verticalIcons.select('filePanel')
-                } catch (e) {
-                  modalDialogCustom.alert(title, e.message)
-                }
-              }
-            }
-          )
-        }
-      })
-    }
-
     const startSolidity = async () => {
       await this.appManager.activatePlugin(['solidity', 'udapp', 'solidityStaticAnalysis', 'solidityUnitTesting'])
       this.verticalIcons.select('solidity')
@@ -300,63 +261,6 @@ export class LandingPage extends ViewPlugin {
     const startPluginManager = async () => {
       await this.appManager.activatePlugin('pluginManager')
       this.verticalIcons.select('pluginManager')
-    }
-    const startRestoreBackupZip = async () => {
-      await this.appManager.activatePlugin(['restorebackupzip'])
-      this.verticalIcons.select('restorebackupzip')
-      _paq.push(['trackEvent', 'pluginManager', 'userActivate', 'restorebackupzip'])
-    }
-
-    const createNewFile = () => {
-      this.call('filePanel', 'createNewFile')
-    }
-
-    const saveAs = (blob, name) => {
-      const node = document.createElement('a')
-      node.download = name
-      node.rel = 'noopener'
-      node.href = URL.createObjectURL(blob)
-      setTimeout(function () { URL.revokeObjectURL(node.href) }, 4E4) // 40s
-      setTimeout(function () {
-        try {
-          node.dispatchEvent(new MouseEvent('click'))
-        } catch (e) {
-          var evt = document.createEvent('MouseEvents')
-          evt.initMouseEvent('click', true, true, window, 0, 0, 0, 80,
-            20, false, false, false, false, 0, null)
-          node.dispatchEvent(evt)
-        }
-      }, 0) // 40s
-    }
-
-    const downloadFiles = async () => {
-      try {
-        tooltip('preparing files for download, please wait..')
-        const fileProviders = globalRegistry.get('fileproviders').api
-        const zip = new JSZip()
-        await fileProviders.browser.copyFolderToJson('/', ({ path, content }) => {
-          zip.file(`remixbackup${path}`, content)
-        })
-        zip.generateAsync({ type: 'blob' }).then(function (blob) {
-          saveAs(blob, 'remixbackup.zip')
-        }).catch((e) => {
-          tooltip(e.message)
-        })
-      } catch (e) {
-        tooltip(e.message)
-      }
-    }
-
-    const uploadFile = (target) => {
-      this.call('filePanel', 'uploadFile', target)
-    }
-
-    const connectToLocalhost = () => {
-      this.appManager.activatePlugin('remixd')
-    }
-    const importFromGist = () => {
-      this.gistHandler.loadFromGist({ gist: '' }, globalRegistry.get('filemanager').api)
-      this.verticalIcons.select('filePanel')
     }
 
     globalRegistry.get('themeModule').api.events.on('themeChanged', (theme) => {
@@ -402,68 +306,8 @@ export class LandingPage extends ViewPlugin {
     this.moreEnv.getElementsByTagName('img')[0].style.filter = `invert(${invertNum})`
     this.websiteIcon.style.filter = `invert(${invertNum})`
 
-    const switchToPreviousVersion = () => {
-      const query = new QueryParams()
-      query.update({ appVersion: '0.7.7' })
-      _paq.push(['trackEvent', 'LoadingType', 'oldExperience_0.7.7'])
-      document.location.reload()
-    }
-
-    const migrate = async () => {
-      try {
-        setTimeout(() => {
-          tooltip('migrating workspace...')
-        }, 500)
-        const workspaceName = await migrateToWorkspace(this.fileManager, this.filePanel)
-        tooltip('done. ' + workspaceName + ' created.')
-      } catch (e) {
-        setTimeout(() => {
-          tooltip(e.message)
-        }, 1000)
-      }
-    }
-    const onAcceptDownloadn = async () => {
-      await downloadFiles()
-      const el = document.getElementById('modal-dialog')
-      el.parentElement.removeChild(el)
-      migrate()
-    }
-
-    const onDownload = () => {
-      const el = document.getElementById('modal-dialog')
-      el.parentElement.removeChild(el)
-      migrate()
-    }
-
-    const onCancel = () => {
-      const el = document.getElementById('modal-dialog')
-      el.parentElement.removeChild(el)
-    }
-
-    const migrateWorkspace = async () => {
-      modalDialog(
-        'File system Migration',
-        yo`
-          <span>Do you want to download your files to local device first?</span>
-          <div class="d-flex justify-content-around pt-3 mt-3 border-top">
-            <button class="btn btn-sm btn-primary" onclick=${async () => onAcceptDownloadn()}>Download and Migrate</button>
-            <button class="btn btn-sm btn-secondary ${css.migrationBtn}" onclick=${() => onDownload()}>Migrate</button>
-            <button class="btn btn-sm btn-secondary ${css.migrationBtn}" onclick=${() => onCancel()}>Cancel</button>
-          </div>
-        `,
-        {
-          label: '',
-          fn: null
-        },
-        {
-          label: '',
-          fn: null
-        }
-      )
-    }
-
-    const img = yo`<img class="m-4 ${css.logoImg}" src="assets/img/guitarRemiCroped.webp" onclick="${() => playRemi()}"></img>`
-    const playRemi = async () => { await document.getElementById('remiAudio').play() }
+    const img = yo`<img class="m-4 ${css.logoImg}" src="assets/img/logo_w1.svg"></img>`
+    const guideImg = yo`<img src="assets/img/guide.png" width="100%" height="100%"></img>`
     // to retrieve medium posts
     document.body.appendChild(yo`<script src="https://www.twilik.com/assets/retainable/rss-embed/retainable-rss-embed.js"></script>`)
     const container = yo`
@@ -474,106 +318,14 @@ export class LandingPage extends ViewPlugin {
               <div class="border-bottom d-flex justify-content-between clearfix py-3 mb-4">
                 <div class="mx-4 w-100 d-flex">
                   ${img}
-                  <audio id="remiAudio" muted=false src="assets/audio/remiGuitar-single-power-chord-A-minor.wav"></audio>
                   <div class="w-80 pl-5 ml-5">
-                    <h5 class="mb-1">Quicklinks</h5>
-                    <a class="${css.text} mr-1" target="__blank" href="https://medium.com/remix-ide/migrating-files-to-workspaces-8e34737c751c?source=friends_link&sk=b75cfd9093aa23c78be13cce49e4a5e8">Guide </a>for migrating the old File System
-                    <p class="font-weight-bold mb-0 py-1">Migration tools:</p>
-                    <li class="pl-1">
-                      <spam class="pl-0">
-                        <u class="${css.text} pr-1" onclick=${() => migrateWorkspace()}>Basic migration</u>
-                      </spam>
-                    </li>
-                    <li class="pl-1">
-                      <u class="${css.text} pr-1" onclick=${() => downloadFiles()}>Download all Files</u>
-                      as a backup zip
-                    </li>
-                    <li class="pl-1">
-                      <u class="${css.text} pr-1" onclick=${() => startRestoreBackupZip()}>Restore files</u>from backup zip
-                     </li>
-                    <p class="font-weight-bold mb-0 mt-2">Help:</p>
-                    <dir class="d-flex flex-column mt-1 pl-0">
-                      <a class="${css.text} mx-1" target="__blank" href="https://gitter.im/ethereum/remix">Gitter channel</a>
-                      <a class="${css.text} mx-1" target="__blank" href="https://github.com/ethereum/remix-project/issues">Report on Github</a>
-                    </dir>
-                  </div>
-                </div>
-              </div>
-              <div class="row ${css.hpSections} mx-4" data-id="landingPageHpSections">
-                <div class="ml-3">
-                  <div class="plugins mb-5">
-                    <h4>Featured Plugins</h4>
-                    <div class="d-flex flex-row pt-2">
-                      ${this.solEnv}
-                      ${this.optimismEnv}
-                      ${this.learnEthEnv}
-                      ${this.solhintEnv}
-                      ${this.sourcifyEnv}                      
-                      ${this.moreEnv}
-                    </div>
-                  </div>
-                  <div class="d-flex">
-                    <div class="file">
-                      <h4>File</h4>
-                      <p class="mb-1">
-                        <i class="mr-1 far fa-file"></i>
-                        <span class="ml-1 mb-1 ${css.text}" onclick=${() => createNewFile()}>New File</span>
-                      </p>
-                      <p class="mb-1">
-                        <i class="mr-1 far fa-file-alt"></i>
-                        <label class="ml-1 ${css.labelIt} ${css.bigLabelSize} ${css.text}">
-                          Open Files
-                          <input title="open file" type="file" onchange="${(event) => {
-                            event.stopPropagation()
-                            uploadFile(event.target)
-                          }
-                        }" multiple />
-                        </label>
-                      </p>
-                      <p class="mb-1">
-                        <i class="far fa-hdd"></i>
-                        <span class="ml-1 ${css.text}" onclick=${() => connectToLocalhost()}>Connect to Localhost</span>
-                      </p>
-                      <p class="mt-3 mb-0"><label>LOAD FROM:</label></p>
-                      <div class="btn-group">
-                        <button class="btn mr-1 btn-secondary" data-id="landingPageImportFromGistButton" onclick="${() => importFromGist()}">Gist</button>
-                        <button class="btn mx-1 btn-secondary" onclick="${() => load('Github', 'github URL', ['https://github.com/0xcert/ethereum-erc721/src/contracts/tokens/nf-token-metadata.sol', 'https://github.com/OpenZeppelin/openzeppelin-solidity/blob/67bca857eedf99bf44a4b6a0fc5b5ed553135316/contracts/access/Roles.sol'])}">GitHub</button>
-                        <button class="btn mx-1 btn-secondary" onclick="${() => load('Ipfs', 'ipfs URL', ['ipfs://<ipfs-hash>'])}">Ipfs</button>
-                        <button class="btn mx-1 btn-secondary" onclick="${() => load('Https', 'http/https raw content', ['https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/token/ERC20/ERC20.sol'])}">https</button>
-                      </div><!-- end of btn-group -->
-                    </div><!-- end of div.file -->
-                    <div class="ml-4 pl-4">
-                      <h4>Resources</h4>
-                      <p class="mb-1">
-                        <i class="mr-1 fas fa-book"></i>
-                        <a class="${css.text}" target="__blank" href="https://remix-ide.readthedocs.io/en/latest/#">Documentation</a>
-                      </p>
-                      <p class="mb-1">
-                        <i class="mr-1 fab fa-gitter"></i>
-                        <a class="${css.text}" target="__blank" href="https://gitter.im/ethereum/remix">Gitter channel</a>
-                      </p>
-                      <p class="mb-1">
-                        ${this.websiteIcon}
-                        <a class="${css.text}" target="__blank" href="https://remix-project.org">Featuring website</a>
-                      </p>
-                      <p class="mb-1">
-                        <i class="fab fa-ethereum ${css.image}"></i>
-                        <span class="${css.text}" onclick=${() => switchToPreviousVersion()}>Old experience</span>
-                      </p>
+                    <h5 class="mb-1">Remix IDE</h5>
+                    <p class="font-weight-bold mb-0 py-1">Hi! This is IDE Remix, where you will perform coding tasks.</p>
+                    <p class="font-weight-bold mb-0 py-1">Below on the screenshot you will find all the information on navigation and code run.</p>
                     </div>
                   </div>
                 </div>
-              </div><!-- end of hpSections -->
-            </div>
-            <div class="d-flex flex-column ${css.rightPanel}">
-              <div class="d-flex pr-3 py-2 align-self-end"  id="remixIDEMediaPanelsTitle">
-                ${this.badgeTwitter}
-                ${this.badgeMedium}
-              </div>
-              <div class="mr-3 d-flex bg-light ${css.panels}" id="remixIDEMediaPanels">
-                ${this.mediumPanel}
-                ${this.twitterPanel}
-              </div>
+              ${guideImg}
             </div>
           </div>
         </div>
