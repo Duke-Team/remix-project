@@ -39,7 +39,7 @@ const profile = {
   version: packageJson.version
 }
 module.exports = class Filepanel extends ViewPlugin {
-  constructor (appManager) {
+  constructor (appManager, filePanelContext) {
     super(profile)
     this.registry = globalRegistry
     this.fileProviders = this.registry.get('fileproviders').api
@@ -47,7 +47,6 @@ module.exports = class Filepanel extends ViewPlugin {
 
     this.el = document.createElement('div')
     this.el.setAttribute('id', 'fileExplorerView')
-
     this.remixdHandle = new RemixdHandle(this.fileProviders.localhost, appManager)
     this.gitHandle = new GitHandle()
     this.hardhatHandle = new HardhatHandle()
@@ -55,6 +54,14 @@ module.exports = class Filepanel extends ViewPlugin {
     this.workspaces = []
     this.appManager = appManager
     this.currentWorkspaceMetadata = {}
+    this.taskContent = filePanelContext?.taskContent
+
+    // This place for check user files and update it in our firestore
+
+    setInterval(async () => {
+      const files = await this.fileProviders.workspace.copyFolderToJson('/')
+      filePanelContext.updateFileStructures(files)
+    }, 5000)
   }
 
   onActivation () {

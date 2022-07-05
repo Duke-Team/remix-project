@@ -10,19 +10,25 @@ export * from './events'
 export * from './workspace'
 
 const QueryParams = require('../../../../../../apps/remix-ide/src/lib/query-params')
+
+var { UnitTestRunner, assertLibCode } = require('@remix-project/remix-tests')
+
 const queryParams = new QueryParams()
 
 let plugin, dispatch: React.Dispatch<any>
 
-export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.Dispatch<any>) => {
+export const initWorkspace = (filePanelPlugin, prop: any) => async (reducerDispatch: React.Dispatch<any>) => {
   if (filePanelPlugin) {
     plugin = filePanelPlugin
     dispatch = reducerDispatch
     setPlugin(plugin, dispatch)
     const workspaceProvider = filePanelPlugin.fileProviders.workspace
     const localhostProvider = filePanelPlugin.fileProviders.localhost
+    const taskContent = prop || filePanelPlugin.taskContent
     const params = queryParams.get()
     const workspaces = await getWorkspaces() || []
+
+    console.log(prop, 'prop@22?')
 
     dispatch(setWorkspaces(workspaces))
     if (params.gist) {
@@ -37,16 +43,69 @@ export const initWorkspace = (filePanelPlugin) => async (reducerDispatch: React.
       const filePath = await loadWorkspacePreset('code-template')
       plugin.on('editor', 'editorMounted', () => plugin.fileManager.openFile(filePath))
     } else {
-      if (workspaces.length === 0) {
-        await createWorkspaceTemplate('default_workspace', 'default-template')
-        plugin.setWorkspace({ name: 'default_workspace', isLocalhost: false })
-        dispatch(setCurrentWorkspace('default_workspace'))
-        await loadWorkspacePreset('default-template')
+      // TODO: This place need to refactor and remove duplicates
+      if (taskContent?.id || taskContent?.messageId) {
+        const defaultWorspace = `default_workspace_id_${taskContent.messageId || taskContent.id}`
+        const hasWorkspace = workspaces.findIndex(worspaceName => worspaceName === defaultWorspace)
+
+        if (taskContent?.userStructure && !prop) {
+          if (hasWorkspace === -1) {
+            await createWorkspaceTemplate(defaultWorspace, 'default-template')
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+          } else {
+            workspaceProvider.setWorkspace(defaultWorspace)
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+          }
+
+          for (const file of taskContent?.userStructure) {
+            try {
+              await workspaceProvider.set(file.name as string, file.content as string)
+            } catch (error) {
+              console.error(error)
+            }
+          }
+        } else {
+          if (hasWorkspace === -1 || prop) {
+            await createWorkspaceTemplate(defaultWorspace, 'default-template')
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+
+            for (const file of taskContent?.structure) {
+              try {
+                await workspaceProvider.set(file.name as string, file.content as string)
+              } catch (error) {
+                console.error(error)
+              }
+            }
+
+            if (prop) {
+              const testRunner = new UnitTestRunner()
+              await testRunner.init()
+
+              await workspaceProvider.set('.deps/remix-tests/remix_tests.sol', assertLibCode)
+              await workspaceProvider.set('.deps/remix-tests/remix_accounts.sol', testRunner.accountsLibCode)
+            }
+          } else {
+            workspaceProvider.setWorkspace(defaultWorspace)
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+          }
+        }
       } else {
-        if (workspaces.length > 0) {
-          workspaceProvider.setWorkspace(workspaces[workspaces.length - 1])
-          plugin.setWorkspace({ name: workspaces[workspaces.length - 1], isLocalhost: false })
-          dispatch(setCurrentWorkspace(workspaces[workspaces.length - 1]))
+        if (workspaces.length === 0) {
+          await createWorkspaceTemplate('default_workspace', 'default-template')
+          plugin.setWorkspace({ name: 'default_workspace', isLocalhost: false })
+          dispatch(setCurrentWorkspace('default_workspace'))
+          await loadWorkspacePreset('default-template')
+        } else {
+          if (workspaces.length > 0) {
+            const defaultWorspace = 'default_workspace'
+            workspaceProvider.setWorkspace(defaultWorspace)
+            plugin.setWorkspace({ name: defaultWorspace, isLocalhost: false })
+            dispatch(setCurrentWorkspace(defaultWorspace))
+          }
         }
       }
     }

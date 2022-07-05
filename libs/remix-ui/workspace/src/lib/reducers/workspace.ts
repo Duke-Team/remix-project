@@ -418,7 +418,7 @@ export const browserReducer = (state = browserInitialState, action: Action) => {
     case 'CREATE_WORKSPACE_SUCCESS': {
       const payload = action.payload as string
       const workspaces = state.browser.workspaces.includes(payload) ? state.browser.workspaces : [...state.browser.workspaces, action.payload]
-
+      console.log(payload, workspaces, 'CREATE_WORKSPACE_SUCCESS')
       return {
         ...state,
         browser: {

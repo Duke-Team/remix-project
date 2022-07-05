@@ -18,6 +18,8 @@ export function Workspace () {
   }, [])
 
   useEffect(() => {
+    console.log(global, 'global')
+    console.log(global.fs.browser.currentWorkspace, 'global.fs.browser.currentWorkspace')
     if (global.fs.mode === 'browser') {
       if (global.fs.browser.currentWorkspace) setCurrentWorkspace(global.fs.browser.currentWorkspace)
       else setCurrentWorkspace(NO_WORKSPACE)
@@ -47,8 +49,23 @@ export function Workspace () {
   }
 
   const deleteCurrentWorkspace = () => {
+    // TODO: delete worspace dispatching - global.fs.browser.currentWorkspace - current workspace id
     global.modal('Delete Current Workspace', 'Are you sure to delete the current workspace?', 'OK', onFinishDeleteWorkspace, '')
   }
+
+  const listener = (event: any) => {
+    if (event?.data?.type === 'remove-current-worspace') {
+      global.dispatchDeleteWorkspace(global.fs.browser.currentWorkspace)
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener('message', listener, false)
+
+    return () => {
+      window.removeEventListener('message', listener)
+    }
+  }, [global.fs.browser])
 
   const onFinishRenameWorkspace = async () => {
     if (workspaceRenameInput.current === undefined) return

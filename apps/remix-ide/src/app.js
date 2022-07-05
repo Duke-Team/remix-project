@@ -127,6 +127,10 @@ const css = csjs`
 class App {
   constructor (api = {}, events = {}, opts = {}) {
     var self = this
+    self.userId = undefined
+    self.taskId = undefined
+    self.testResults = undefined
+    self.taskContent = undefined
     self.appManager = new RemixAppManager({})
     self._components = {}
     self._view = {}
@@ -162,7 +166,15 @@ class App {
   }
 
   init () {
-    this.run().catch(console.error)
+    window.addEventListener('message', event => {
+      if (event?.data?.type === 'set-task-content') {
+        event?.data?.payload && this.run(event?.data?.payload).catch(console.error)
+      }
+    }, false)
+
+    window.parent && window.parent.postMessage({
+      type: 'ide-init-before'
+    }, '*')
   }
 
   render () {
@@ -202,8 +214,170 @@ class App {
     return self._view.el
   }
 
-  async run () {
+  parseStructures (structure, files = []) {
+    for (const key in structure) {
+      const file = structure[key]
+
+      if (file?.children) {
+        const parsedFiles = this.parseStructures(file, files)
+        files.concat(parsedFiles)
+      }
+
+      if (file?.content) {
+        files.push({
+          name: key,
+          content: file?.content
+        })
+      }
+
+      if (!file?.children && !file?.content) {
+        const parsedFiles = this.parseStructures(file, files)
+        files.concat(parsedFiles)
+      }
+    }
+
+    return files
+  }
+
+  async updateFileStructures (structure) {
+    const userId = this.userId
+    const taskId = this.userId
+    const currentUserStructure = this.parseStructures(structure)
+    const userBeforeCheckStructure = this.taskContent?.userStructure
+
+    this.taskContent.userStructure = currentUserStructure
+    if (!userId || !taskId) {
+      return false
+    }
+
+    if (JSON.stringify(userBeforeCheckStructure) === JSON.stringify(currentUserStructure)) {
+      return
+    }
+
+    const payload = {
+      taskId: this.taskId,
+      userId: this.userId,
+      userStructure: currentUserStructure
+    }
+
+    try {
+      window.parent && window.parent.postMessage({
+        type: 'user-task-structure',
+        payload
+      }, '*')
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async sendTestResult (testResult) {
+    const userId = this.userId
+    const taskId = this.userId
+
+    if (!userId || !taskId) {
+      return false
+    }
+
+    const hasFailureRootTest = testResult?.findIndex(test => test.totalFailing)
+
+    const payload = {
+      testResult,
+      taskId: this.taskId,
+      userId: this.userId,
+      task: this.taskContent,
+      isValidFinished: hasFailureRootTest === -1
+    }
+
+    try {
+      window.parent && window.parent.postMessage({
+        type: 'user-task-progress',
+        payload
+      }, '*')
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  resetTestResult () {
+    this.testResults = undefined
+  }
+
+  updateTestResult (result, rootTestsNumber) {
+    window.parent && window.parent.postMessage({
+      type: 'start-task-progress'
+    }, '*')
+
+    let parsedResult = result
+
+    if (result.web3) {
+      delete result.web3
+
+      parsedResult = result
+    }
+
+    this.testResults = [...(this.testResults ?? []), parsedResult].reduce((tests, test) => {
+      if (!test.type) {
+        const testItems = tests.filter(item => item.type)
+        const testParents = tests.filter(item => !item.type)
+        return [
+          ...testParents,
+          {
+            tests: testItems,
+            ...test
+          }
+        ]
+      }
+
+      return [...tests, test]
+    }, [])
+
+    const passedRootTestsLength = this.testResults.filter(item => !item.type).length
+
+    if (rootTestsNumber === passedRootTestsLength) {
+      this.sendTestResult(this.testResults)
+    }
+  }
+
+  async run (taskContent) {
+    console.log('taskCOntent', taskContent)
     var self = this
+    const queryParams = new QueryParams()
+    const params = queryParams.get()
+
+    try {
+      if (taskContent?.task) {
+        self.taskContent = { ...taskContent.task, userStructure: taskContent?.userStructure }
+      } else {
+        self.taskContent = taskContent
+      }
+    } catch (error) {
+      console.error(error)
+    }
+
+    if (params?.userId) {
+      self.userId = params?.userId
+    }
+
+    if (params?.userId) {
+      self.taskId = params?.taskId
+    }
+
+    const updateTestsMethods = {
+      updateTestResult: self.updateTestResult,
+      resetTestResult: self.resetTestResult,
+      sendTestResult: self.sendTestResult,
+      taskContent: self.taskContent,
+      taskId: self.taskId,
+      userId: self.userId
+    }
+
+    const filePanelContext = {
+      updateFileStructures: self.updateFileStructures,
+      parseStructures: self.parseStructures,
+      taskContent: self.taskContent,
+      taskId: self.taskId,
+      userId: self.userId
+    }
 
     // check the origin and warn message
     if (window.location.hostname === 'yann300.github.io') {
@@ -214,6 +388,7 @@ class App {
     } else if (window.location.protocol.indexOf('http') === 0 &&
     window.location.hostname !== 'remix.ethereum.org' &&
     window.location.hostname !== 'localhost' &&
+    window.location.hostname !== 'duke-remix-master.netlify.app' &&
     window.location.hostname !== '127.0.0.1') {
       modalDialogCustom.alert(`The Remix IDE has moved to http://remix.ethereum.org.\n
   This instance of Remix you are visiting WILL NOT BE UPDATED.\n
@@ -332,7 +507,7 @@ class App {
     const sidePanel = new SidePanel(appManager, menuicons)
     const hiddenPanel = new HiddenPanel()
     const pluginManagerComponent = new PluginManagerComponent(appManager, engine)
-    const filePanel = new FilePanel(appManager)
+    const filePanel = new FilePanel(appManager, filePanelContext)
     const landingPage = new LandingPage(appManager, menuicons, fileManager, filePanel, contentImport)
     const settings = new SettingsTab(
       registry.get('config').api,
@@ -355,9 +530,6 @@ class App {
       pluginManagerComponent,
       settings
     ])
-
-    const queryParams = new QueryParams()
-    const params = queryParams.get()
 
     const onAcceptMatomo = () => {
       _paq.push(['forgetUserOptOut'])
@@ -439,7 +611,8 @@ class App {
       filePanel,
       compileTab,
       appManager,
-      contentImport
+      contentImport,
+      updateTestsMethods
     )
 
     engine.register([
@@ -510,12 +683,17 @@ class App {
         appManager.activatePlugin(['solidity', 'udapp'])
       }
     })
+    appManager.activatePlugin(['solidityUnitTesting'])
 
     // Load and start the service who manager layout and frame
     const framingService = new FramingService(sidePanel, menuicons, mainview, this._components.resizeFeature)
 
     if (params.embed) framingService.embed()
     framingService.start(params)
+
+    window.parent && window.parent.postMessage({
+      type: 'ide-inited'
+    }, '*')
   }
 }
 

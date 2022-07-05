@@ -331,6 +331,22 @@ To run a script, right click on file name in the file explorer and click 'Run'. 
 Output from script will appear in remix terminal.
 `
 
+const testSol = `
+    pragma solidity ^0.8.7;
+
+    contract Test {
+        uint a = 10;
+        uint b = 5;
+        
+        uint sum;
+        
+        function getSum() public returns(uint) {
+            sum = a + b;
+            return sum;
+        }
+    }
+`
+
 module.exports = {
   storage: { name: 'contracts/1_Storage.sol', content: storage },
   owner: { name: 'contracts/2_Owner.sol', content: owner },
@@ -338,5 +354,6 @@ module.exports = {
   deployWithWeb3: { name: 'scripts/deploy_web3.js', content: deployWithWeb3 },
   deployWithEthers: { name: 'scripts/deploy_ethers.js', content: deployWithEthers },
   ballot_test: { name: 'tests/4_Ballot_test.sol', content: ballotTest },
+  test: { name: 'test.sol', content: testSol },
   readme: { name: 'README.txt', content: readme }
 }
