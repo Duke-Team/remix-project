@@ -46,6 +46,9 @@ const css = csjs`
   .logoImg {
     height: 2em;
   }
+  .content {
+    height: 100%;
+  }
   .hpSections {
   }
   .rightPanel {
@@ -313,7 +316,7 @@ export class LandingPage extends ViewPlugin {
     const container = yo`
       <div class="${css.homeContainer} d-flex" data-id="landingPageHomeContainer">
         <div class="${css.mainContent} bg-light">
-          <div class="d-flex justify-content-between">
+          <div class="d-flex justify-content-center ${css.content}">
             <div class="d-flex flex-column">
               <div class="border-bottom d-flex justify-content-between clearfix py-3 mb-4">
                 <div class="mx-4 w-100 d-flex">
