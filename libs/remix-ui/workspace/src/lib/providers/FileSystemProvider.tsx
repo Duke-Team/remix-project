@@ -27,8 +27,8 @@ export const FileSystemProvider = (props: WorkspaceProps) => {
   const [focusToaster, setFocusToaster] = useState<string>('')
   const [toasters, setToasters] = useState<string[]>([])
 
-  const dispatchInitWorkspace = async () => {
-    await initWorkspace(plugin)(fsDispatch)
+  const dispatchInitWorkspace = async (prop?: any) => {
+    await initWorkspace(plugin, prop)(fsDispatch)
   }
 
   const dispatchFetchDirectory = async (path: string) => {
@@ -114,6 +114,20 @@ export const FileSystemProvider = (props: WorkspaceProps) => {
   const dispatchHandleExpandPath = async (paths: string[]) => {
     await handleExpandPath(paths)
   }
+
+  const listener = (event: any) => {
+    if (event?.data?.type === 'restart-task-content') {
+      dispatchInitWorkspace(event?.data?.payload)
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener('message', listener, false)
+
+    return () => {
+      window.removeEventListener('message', listener)
+    }
+  }, [])
 
   useEffect(() => {
     dispatchInitWorkspace()

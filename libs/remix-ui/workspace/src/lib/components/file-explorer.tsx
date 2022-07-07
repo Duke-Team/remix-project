@@ -138,6 +138,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
   }
 
   const createNewFile = async (newFilePath: string) => {
+    console.log(newFilePath, props.name, 'newFilePath, props.name')
     try {
       props.dispatchCreateNewFile(newFilePath, props.name)
     } catch (error) {
@@ -177,6 +178,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
   }
 
   const copyFile = (src: string, dest: string) => {
+    console.log(src, dest, 'src, dest')
     try {
       props.dispatchCopyFile(src, dest)
     } catch (error) {

@@ -49,6 +49,7 @@ export const createWorkspace = async (workspaceName: string, isEmpty = false, cb
     plugin.setWorkspace({ name: workspaceName, isLocalhost: false })
     plugin.setWorkspaces(await getWorkspaces())
     plugin.workspaceCreated(workspaceName)
+    console.log(isEmpty, 'wtf? is not HERE!')
     if (!isEmpty) await loadWorkspacePreset('default-template')
     cb && cb(null, workspaceName)
   }).catch((error) => {
@@ -71,6 +72,7 @@ export const createWorkspaceTemplate = async (workspaceName: string, template: '
 
 export const loadWorkspacePreset = async (template: 'gist-template' | 'code-template' | 'default-template' = 'default-template') => {
   const workspaceProvider = plugin.fileProviders.workspace
+
   const params = queryParams.get()
 
   switch (template) {
@@ -282,11 +284,13 @@ export const getWorkspaces = async (): Promise<string[]> | undefined => {
   try {
     const workspaces: string[] = await new Promise((resolve, reject) => {
       const workspacesPath = plugin.fileProviders.workspace.workspacesPath
+      console.log(plugin.fileProviders, 'plugin.fileProviders')
 
       plugin.fileProviders.browser.resolveDirectory('/' + workspacesPath, (error, items) => {
         if (error) {
           return reject(error)
         }
+
         resolve(Object.keys(items)
           .filter((item) => items[item].isDirectory)
           .map((folder) => folder.replace(workspacesPath + '/', '')))

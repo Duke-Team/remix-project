@@ -25,10 +25,11 @@ const profile = {
 }
 
 module.exports = class TestTab extends ViewPlugin {
-  constructor (fileManager, offsetToLineColumnConverter, filePanel, compileTab, appManager, contentImport) {
+  constructor (fileManager, offsetToLineColumnConverter, filePanel, compileTab, appManager, contentImport, updateTestsMethods) {
     super(profile)
     this.compileTab = compileTab
     this.contentImport = contentImport
+    this.updateTestsMethods = updateTestsMethods
     this._view = { el: null }
     this.fileManager = fileManager
     this.filePanel = filePanel
@@ -52,6 +53,12 @@ module.exports = class TestTab extends ViewPlugin {
     appManager.event.on('deactivate', (name) => {
       if (name === 'solidity') this.updateRunAction()
     })
+
+    window.addEventListener('message', event => {
+      if (event?.data?.type === 'run-remix-tests') {
+        this.runTests()
+      }
+    }, false)
   }
 
   onActivationInternal () {
@@ -274,6 +281,11 @@ module.exports = class TestTab extends ViewPlugin {
   testCallback (result, runningTests) {
     this.testsOutput.hidden = false
     let debugBtn = yo``
+
+    if (['testPass', 'testFailure'].includes(result.type)) {
+      this.updateTestsMethods.updateTestResult(result, this.runningTestsNumber)
+    }
+
     if ((result.type === 'testPass' || result.type === 'testFailure') && result.debugTxHash) {
       const { web3, debugTxHash } = result
       debugBtn = yo`<div id=${result.value.replaceAll(' ', '_')} class="btn border btn btn-sm ml-1" title="Start debugging" onclick=${() => this.startDebug(debugTxHash, web3)}>
@@ -416,15 +428,32 @@ module.exports = class TestTab extends ViewPlugin {
       this.setHeader(false)
     }
     if (_errors && _errors.errors) {
+      console.log(_errors && _errors.errors, '_errors && _errors.errors')
+      window.parent && window.parent.postMessage({
+        type: 'show-compile-error',
+        payload: _errors.errors
+      }, '*')
+
       _errors.errors.forEach((err) => this.renderer.error(err.formattedMessage || err.message, this.testsOutput, { type: err.severity, errorType: err.type }))
     } else if (_errors && Array.isArray(_errors) && (_errors[0].message || _errors[0].formattedMessage)) {
+      window.parent && window.parent.postMessage({
+        type: 'show-compile-error',
+        payload: _errors
+      }, '*')
+
       _errors.forEach((err) => this.renderer.error(err.formattedMessage || err.message, this.testsOutput, { type: err.severity, errorType: err.type }))
     } else if (_errors && !_errors.errors && !Array.isArray(_errors)) {
+      window.parent && window.parent.postMessage({
+        type: 'show-compile-error',
+        payload: [_errors]
+      }, '*')
+
       // To track error like this: https://github.com/ethereum/remix/pull/1438
       this.renderer.error(_errors.formattedMessage || _errors.message, this.testsOutput, { type: 'error' })
     }
     yo.update(this.resultStatistics, this.createResultLabel())
     if (result) {
+      this.updateTestsMethods.updateTestResult(result, this.runningTestsNumber)
       const totalTime = parseFloat(result.totalTime).toFixed(2)
 
       if (result.totalPassing > 0 && result.totalFailing > 0) {
@@ -490,6 +519,10 @@ module.exports = class TestTab extends ViewPlugin {
         runBtn.removeAttribute('disabled')
       }
       this.areTestsRunning = false
+
+      window.parent && window.parent.postMessage({
+        type: 'finish-task-progress'
+      }, '*')
     }
   }
 
@@ -600,6 +633,9 @@ module.exports = class TestTab extends ViewPlugin {
   }
 
   runTests () {
+    window.parent && window.parent.postMessage({
+      type: 'start-task-progress'
+    }, '*')
     this.areTestsRunning = true
     this.hasBeenStopped = false
     this.readyTestsNumber = 0
@@ -611,6 +647,7 @@ module.exports = class TestTab extends ViewPlugin {
     this.clearResults()
     yo.update(this.resultStatistics, this.createResultLabel())
     const tests = this.data.selectedTests
+
     if (!tests) return
     this.resultStatistics.hidden = tests.length === 0
     _paq.push(['trackEvent', 'solidityUnitTesting', 'runTests'])
@@ -621,6 +658,10 @@ module.exports = class TestTab extends ViewPlugin {
   }
 
   stopTests () {
+    window.parent && window.parent.postMessage({
+      type: 'finish-task-progress'
+    }, '*')
+
     this.hasBeenStopped = true
     const stopBtnLabel = document.getElementById('runTestsTabStopActionLabel')
     stopBtnLabel.innerText = 'Stopping'
@@ -650,6 +691,7 @@ module.exports = class TestTab extends ViewPlugin {
   }
 
   updateRunAction (currentFile) {
+    this.updateTestsMethods.resetTestResult()
     const el = yo`
       <button id="runTestsTabRunAction" title="Run tests" data-id="testTabRunTestsTabRunAction" class="w-50 btn btn-primary" onclick="${() => this.runTests()}">
         <span class="fas fa-play ml-2"></span>
@@ -674,6 +716,8 @@ module.exports = class TestTab extends ViewPlugin {
   }
 
   updateStopAction () {
+    this.updateTestsMethods.resetTestResult()
+
     return yo`
       <button id="runTestsTabStopAction" data-id="testTabRunTestsTabStopAction" class="w-50 pl-2 ml-2 btn btn-secondary" disabled="disabled" title="Stop running tests" onclick=${() => this.stopTests()}">
         <span class="fas fa-stop ml-2"></span>
