@@ -307,7 +307,6 @@ export class LandingPage extends ViewPlugin {
     this.websiteIcon.style.filter = `invert(${invertNum})`
 
     const img = yo`<img class="m-4 ${css.logoImg}" src="assets/img/logo_w1.svg"></img>`
-    const guideImg = yo`<img src="assets/img/guide.png" width="100%" height="100%"></img>`
     // to retrieve medium posts
     document.body.appendChild(yo`<script src="https://www.twilik.com/assets/retainable/rss-embed/retainable-rss-embed.js"></script>`)
     const container = yo`
@@ -325,7 +324,6 @@ export class LandingPage extends ViewPlugin {
                     </div>
                   </div>
                 </div>
-              ${guideImg}
             </div>
           </div>
         </div>
