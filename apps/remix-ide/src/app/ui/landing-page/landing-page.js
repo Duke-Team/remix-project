@@ -322,8 +322,10 @@ export class LandingPage extends ViewPlugin {
                   ${img}
                   <div class="w-80 pl-5 ml-5">
                     <h5 class="mb-1">Remix IDE</h5>
-                    <p class="font-weight-bold mb-0 py-1">Hi! This is IDE Remix, where you will perform coding tasks.</p>
-                    <p class="font-weight-bold mb-0 py-1">Below on the screenshot you will find all the information on navigation and code run.</p>
+                    <p class="font-weight-bold mb-0 py-1">Hi! This is IDE Remix. Remix is the most popular development environment for ethereum network.</p>
+                    <p class="font-weight-bold mb-0 py-1">Each file you create and compile is added to W3C internal blockchain, and you can be confident that any code is executed as in a real blockchain.</p>
+                    <p class="font-weight-bold mb-0 py-1">You can find the current task in the bottom left corner. If you need a hint or want to know the answer, you can use the according buttons.</p>
+                    <p class="font-weight-bold mb-0 py-1">The task awaits!</p>
                     </div>
                   </div>
                 </div>
