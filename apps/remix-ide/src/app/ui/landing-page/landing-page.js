@@ -309,15 +309,24 @@ export class LandingPage extends ViewPlugin {
     this.moreEnv.getElementsByTagName('img')[0].style.filter = `invert(${invertNum})`
     this.websiteIcon.style.filter = `invert(${invertNum})`
 
-    const guideImg = yo`<img class="${css.guideImg}" src="assets/img/guide.png" width="100%" height="100%"></img>`
+    const img = yo`<img class="m-4 ${css.logoImg}" src="assets/img/logo_w1.svg"></img>`
     // to retrieve medium posts
     document.body.appendChild(yo`<script src="https://www.twilik.com/assets/retainable/rss-embed/retainable-rss-embed.js"></script>`)
     const container = yo`
       <div class="${css.homeContainer} d-flex" data-id="landingPageHomeContainer">
         <div class="${css.mainContent} bg-light">
-          <div class="d-flex justify-content-center ${css.content}">
+          <div class="d-flex justify-content-between">
             <div class="d-flex flex-column">
-                ${guideImg}
+              <div class="border-bottom d-flex justify-content-between clearfix py-3 mb-4">
+                <div class="mx-4 w-100 d-flex">
+                  ${img}
+                  <div class="w-80 pl-5 ml-5">
+                    <h5 class="mb-1">Remix IDE</h5>
+                    <p class="font-weight-bold mb-0 py-1">Hi! This is IDE Remix, where you will perform coding tasks.</p>
+                    <p class="font-weight-bold mb-0 py-1">Below on the screenshot you will find all the information on navigation and code run.</p>
+                    </div>
+                  </div>
+                </div>
             </div>
           </div>
         </div>
