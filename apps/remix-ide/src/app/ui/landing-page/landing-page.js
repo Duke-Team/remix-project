@@ -44,7 +44,7 @@ const css = csjs`
     text-align: center;
   }
   .logoImg {
-    height: 4em;
+    height: 2.5em;
   }
   .content {
     height: 100%;
@@ -309,7 +309,7 @@ export class LandingPage extends ViewPlugin {
     this.moreEnv.getElementsByTagName('img')[0].style.filter = `invert(${invertNum})`
     this.websiteIcon.style.filter = `invert(${invertNum})`
 
-    const img = yo`<img class="m-4 ${css.logoImg}" src="assets/img/logo_w1.svg"></img>`
+    const img = yo`<img class="m-4 ${css.logoImg}" src="assets/img/logo_web3ct.svg"></img>`
     // to retrieve medium posts
     document.body.appendChild(yo`<script src="https://www.twilik.com/assets/retainable/rss-embed/retainable-rss-embed.js"></script>`)
     const container = yo`
